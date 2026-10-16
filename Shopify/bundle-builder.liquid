@@ -1,0 +1,1248 @@
+{%- comment -%}
+  Bundle Builder Section — Premium UI
+  Renders product groups; customer selects one variant per group.
+  Adds all selections to cart in a single request with a shared bundle ID,
+  then re-renders the cart drawer + cart bubble from the same response.
+
+  Structure:
+    1. Liquid markup
+    2. Scoped CSS
+    3. Vanilla JS (no dependencies)
+{%- endcomment -%}
+
+{%- liquid
+  assign group_count = section.blocks.size
+  assign heading = section.settings.heading | default: 'Build Your Perfect Bundle'
+  assign subheading = section.settings.subheading
+  assign button_text = section.settings.button_text | default: 'Add Bundle to Cart'
+-%}
+
+<div
+  class="bundle-builder"
+  data-bundle-builder
+  data-group-count="{{ group_count }}"
+  data-money-format="{{ shop.money_format | escape }}"
+  role="region"
+  aria-label="{{ heading | escape }}"
+>
+  <div class="bb-blob bb-blob--1" aria-hidden="true"></div>
+  <div class="bb-blob bb-blob--2" aria-hidden="true"></div>
+
+  <div class="bb-container">
+    <header class="bb-header">
+      <span class="bb-eyebrow">
+        <span class="bb-eyebrow__dot" aria-hidden="true"></span>
+        Curated Bundle
+      </span>
+      <h2 class="bb-title">{{ heading | escape }}</h2>
+      {%- if subheading != blank -%}
+        <p class="bb-subtitle">{{ subheading | escape }}</p>
+      {%- endif -%}
+
+      {%- comment -%} Stepper: each step links to its group so it works with keyboard + touch {%- endcomment -%}
+      <ol class="bb-progress" data-bb-progress aria-label="Bundle progress">
+        {%- for block in section.blocks -%}
+          {%- assign step_target = 'bb-group-' | append: section.id | append: '-' | append: forloop.index0 -%}
+          <li
+            class="bb-progress__step{% if forloop.first %} is-active{% endif %}"
+            data-bb-step="{{ forloop.index0 }}"
+            {% if forloop.first %}aria-current="step"{% endif %}
+          >
+            <a class="bb-progress__link" href="#{{ step_target }}" data-bb-step-link>
+              <span class="bb-progress__marker" aria-hidden="true">
+                <span class="bb-progress__num">{{ forloop.index }}</span>
+                <svg class="bb-progress__tick" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                  <polyline points="20 6 9 17 4 12"/>
+                </svg>
+              </span>
+              <span class="bb-progress__label">{{ block.settings.group_title | default: 'Step' | escape | truncate: 22 }}</span>
+              <span class="bb-sr-only" data-bb-step-state>{% if forloop.first %}current step{% else %}not started{% endif %}</span>
+            </a>
+          </li>
+        {%- endfor -%}
+      </ol>
+    </header>
+
+    <div class="bb-grid">
+      {%- for block in section.blocks -%}
+        {%- assign group_products = block.settings.group_products -%}
+        {%- assign group_uid = 'bb-group-' | append: section.id | append: '-' | append: forloop.index0 -%}
+        <fieldset
+          class="bb-group"
+          id="{{ group_uid }}"
+          data-bundle-group
+          data-group-index="{{ forloop.index0 }}"
+          style="--delay: {{ forloop.index0 | times: 80 }}ms"
+          aria-labelledby="{{ group_uid }}-legend"
+          {{ block.shopify_attributes }}
+        >
+          <legend class="bb-group__head" id="{{ group_uid }}-legend">
+            <span class="bb-group__meta">
+              <span class="bb-group__num" aria-hidden="true">{{ forloop.index }}</span>
+              <span class="bb-group__step">Step {{ forloop.index }} of {{ group_count }}</span>
+              <span class="bb-group__status" aria-hidden="true">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+                Selected
+              </span>
+            </span>
+            <span class="bb-group__title">{{ block.settings.group_title | default: 'Select a product' | escape }}</span>
+            {%- if block.settings.group_description != blank -%}
+              <span class="bb-group__desc">{{ block.settings.group_description | escape }}</span>
+            {%- endif -%}
+          </legend>
+
+          <div class="bb-group__products" role="radiogroup" aria-labelledby="{{ group_uid }}-legend" aria-required="true">
+            {%- if group_products != blank and group_products.count > 0 -%}
+              {%- for product in group_products -%}
+                {%- liquid
+                  assign first_variant = product.selected_or_first_available_variant
+                  assign variant_available = first_variant.available
+                  assign input_id = group_uid | append: '-v-' | append: first_variant.id
+                -%}
+                <div
+                  class="bb-product{% unless variant_available %} bb-product--soldout{% endunless %}"
+                  data-bundle-product
+                  data-product-id="{{ product.id }}"
+                  data-variant-id="{{ first_variant.id }}"
+                  data-price="{{ first_variant.price }}"
+                  data-available="{{ variant_available }}"
+                >
+                  <input
+                    type="radio"
+                    id="{{ input_id }}"
+                    name="{{ group_uid }}"
+                    value="{{ first_variant.id }}"
+                    data-bundle-radio
+                    data-price="{{ first_variant.price }}"
+                    {% unless variant_available %}disabled aria-disabled="true"{% endunless %}
+                  >
+                  <label class="bb-product__label" for="{{ input_id }}">
+                    <span class="bb-product__media" aria-hidden="true">
+                      {%- if product.featured_image -%}
+                        <img
+                          class="bb-product__image"
+                          src="{{ product.featured_image | image_url: width: 200 }}"
+                          alt=""
+                          width="100"
+                          height="100"
+                          loading="lazy"
+                          decoding="async"
+                        >
+                      {%- else -%}
+                        <span class="bb-product__placeholder"></span>
+                      {%- endif -%}
+                      <span class="bb-product__check">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round">
+                          <polyline points="20 6 9 17 4 12"/>
+                        </svg>
+                      </span>
+                    </span>
+
+                    <span class="bb-product__info">
+                      <span class="bb-product__title">{{ product.title | escape }}</span>
+                      <span class="bb-product__price">{{ first_variant.price | money }}</span>
+                    </span>
+
+                    {%- unless variant_available -%}
+                      <span class="bb-product__soldout">Sold out</span>
+                    {%- endunless -%}
+                  </label>
+                </div>
+              {%- endfor -%}
+            {%- else -%}
+              <p class="bb-group__empty">No products selected for this group.</p>
+            {%- endif -%}
+          </div>
+        </fieldset>
+      {%- endfor -%}
+    </div>
+
+    <div class="bb-footer">
+      <div class="bb-summary">
+        <div class="bb-summary__left">
+          <span class="bb-summary__label" id="bb-total-label">Bundle total</span>
+          <span class="bb-summary__count" data-bundle-count aria-live="polite">0 / {{ group_count }} selected</span>
+        </div>
+        <div class="bb-summary__right">
+          <span class="bb-summary__total" data-bundle-total aria-labelledby="bb-total-label">{{ 0 | money }}</span>
+        </div>
+      </div>
+
+      <button
+        type="button"
+        class="bb-add-btn"
+        data-bundle-add
+        disabled
+        aria-disabled="true"
+      >
+        <span class="bb-add-btn__shine" aria-hidden="true"></span>
+        <span class="bb-add-btn__text">{{ button_text | escape }}</span>
+        <span class="bb-add-btn__loading" aria-hidden="true">
+          <span class="bb-spinner"></span>
+          Adding…
+        </span>
+        <span class="bb-add-btn__arrow" aria-hidden="true">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="5" y1="12" x2="19" y2="12"/>
+            <polyline points="12 5 19 12 12 19"/>
+          </svg>
+        </span>
+      </button>
+
+      {%- comment -%} Visible only for errors. Success is announced to screen readers only. {%- endcomment -%}
+      <p class="bb-message" data-bundle-message role="alert"></p>
+      <p class="bb-sr-only" data-bundle-status role="status" aria-live="polite"></p>
+    </div>
+  </div>
+</div>
+
+<style>
+/* ============================================================
+   Bundle Builder — Premium UI
+   ============================================================ */
+.bundle-builder {
+  --bb-bg: #ffffff;
+  --bb-surface: #ffffff;
+  --bb-border: #ececec;
+  --bb-text: #0f0f10;
+  --bb-muted: #6b7280;
+  --bb-accent: #111111;
+  --bb-accent-contrast: #ffffff;
+  --bb-success: #0a7c3a;
+  --bb-error: #d1372b;
+  --bb-radius: 18px;
+  --bb-radius-sm: 12px;
+  --bb-shadow-sm: 0 1px 2px rgba(17,17,17,.04), 0 4px 12px rgba(17,17,17,.04);
+  --bb-shadow-md: 0 8px 24px rgba(17,17,17,.08), 0 2px 6px rgba(17,17,17,.04);
+  --bb-shadow-lg: 0 20px 48px rgba(17,17,17,.12);
+
+  position: relative;
+  padding: 72px 24px;
+  background:
+    radial-gradient(1200px 600px at 10% -10%, #f6f7ff 0%, transparent 55%),
+    radial-gradient(900px 500px at 110% 10%, #fff3f6 0%, transparent 55%),
+    linear-gradient(180deg, #fbfbfd 0%, #ffffff 100%);
+  overflow: hidden;
+  font-family: inherit;
+  color: var(--bb-text);
+  isolation: isolate;
+}
+@media (max-width: 640px) {
+  .bundle-builder { padding: 48px 16px; }
+}
+
+.bb-sr-only {
+  position: absolute !important;
+  width: 1px; height: 1px;
+  margin: -1px; padding: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Decorative blobs */
+.bb-blob {
+  position: absolute;
+  border-radius: 50%;
+  filter: blur(80px);
+  opacity: .35;
+  pointer-events: none;
+  z-index: 0;
+}
+.bb-blob--1 {
+  width: 420px; height: 420px;
+  top: -120px; left: -120px;
+  background: linear-gradient(135deg, #a5b4fc, #f0abfc);
+  animation: bb-float 14s ease-in-out infinite;
+}
+.bb-blob--2 {
+  width: 380px; height: 380px;
+  bottom: -140px; right: -120px;
+  background: linear-gradient(135deg, #fda4af, #fdba74);
+  animation: bb-float 18s ease-in-out infinite reverse;
+}
+@keyframes bb-float {
+  0%,100% { transform: translate(0,0) scale(1); }
+  50%     { transform: translate(30px,-30px) scale(1.06); }
+}
+
+.bb-container {
+  position: relative;
+  z-index: 1;
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+/* ---------- Header ---------- */
+.bb-header { text-align: center; margin-bottom: 40px; }
+
+.bb-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background: rgba(17,17,17,.05);
+  color: var(--bb-text);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+  backdrop-filter: blur(6px);
+}
+.bb-eyebrow__dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--bb-success);
+  box-shadow: 0 0 0 0 rgba(10,124,58,.6);
+  animation: bb-pulse 2s infinite;
+}
+@keyframes bb-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(10,124,58,.5); }
+  70%  { box-shadow: 0 0 0 8px rgba(10,124,58,0); }
+  100% { box-shadow: 0 0 0 0 rgba(10,124,58,0); }
+}
+
+.bb-title {
+  font-size: clamp(28px, 4vw, 44px);
+  line-height: 1.1;
+  letter-spacing: -.02em;
+  margin: 0 0 12px;
+  font-weight: 800;
+  background: linear-gradient(180deg, #111 0%, #3b3b3f 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+.bb-subtitle {
+  margin: 0 auto;
+  max-width: 560px;
+  color: var(--bb-muted);
+  font-size: 16px;
+  line-height: 1.55;
+}
+
+/* ---------- Stepper (connected steps) ---------- */
+.bb-progress {
+  list-style: none;
+  padding: 0;
+  margin: 36px auto 0;
+  max-width: 720px;
+  display: flex;
+  align-items: flex-start;
+}
+.bb-progress__step {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 0;
+}
+/* connector track + animated fill, drawn between this step and the next */
+.bb-progress__step:not(:last-child)::before,
+.bb-progress__step:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  top: 17px;
+  left: calc(50% + 26px);
+  right: calc(-50% + 26px);
+  height: 2px;
+  border-radius: 2px;
+}
+.bb-progress__step:not(:last-child)::before { background: #e5e7eb; }
+.bb-progress__step:not(:last-child)::after {
+  background: var(--bb-success);
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform .45s cubic-bezier(.4,0,.2,1);
+}
+.bb-progress__step.is-complete:not(:last-child)::after { transform: scaleX(1); }
+
+.bb-progress__link {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 0 6px;
+  color: var(--bb-muted);
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.3;
+  text-align: center;
+  border-radius: 10px;
+  transition: color .25s;
+}
+.bb-progress__link:focus-visible {
+  outline: 2px solid var(--bb-text);
+  outline-offset: 4px;
+}
+.bb-progress__marker {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 36px; height: 36px;
+  border-radius: 50%;
+  background: #fff;
+  border: 2px solid #e5e7eb;
+  color: #9ca3af;
+  font-size: 14px;
+  font-weight: 700;
+  box-shadow: var(--bb-shadow-sm);
+  transition: all .3s cubic-bezier(.4,0,.2,1);
+  z-index: 1;
+}
+.bb-progress__tick {
+  position: absolute;
+  width: 16px; height: 16px;
+  opacity: 0;
+  transform: scale(.5);
+  transition: all .3s cubic-bezier(.34,1.56,.64,1);
+}
+.bb-progress__label {
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.bb-progress__step.is-active .bb-progress__link { color: var(--bb-text); }
+.bb-progress__step.is-active .bb-progress__marker {
+  border-color: var(--bb-text);
+  background: var(--bb-text);
+  color: #fff;
+  box-shadow: 0 0 0 5px rgba(17,17,17,.08);
+}
+.bb-progress__step.is-complete .bb-progress__link { color: var(--bb-success); }
+.bb-progress__step.is-complete .bb-progress__marker {
+  border-color: var(--bb-success);
+  background: var(--bb-success);
+  color: #fff;
+}
+.bb-progress__step.is-complete .bb-progress__num { opacity: 0; }
+.bb-progress__step.is-complete .bb-progress__tick { opacity: 1; transform: scale(1); }
+
+@media (max-width: 640px) {
+  .bb-progress__label { max-width: 72px; font-size: 12px; }
+  .bb-progress__marker { width: 32px; height: 32px; }
+  .bb-progress__step:not(:last-child)::before,
+  .bb-progress__step:not(:last-child)::after { top: 15px; left: calc(50% + 22px); right: calc(-50% + 22px); }
+}
+
+/* ---------- Grid ---------- */
+.bb-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+  margin-bottom: 32px;
+}
+@media (max-width: 900px) {
+  .bb-grid { grid-template-columns: 1fr; }
+}
+
+/* ---------- Group Card ---------- */
+.bb-group {
+  position: relative;
+  background: rgba(255,255,255,.75);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255,255,255,.7);
+  border-radius: var(--bb-radius);
+  padding: 20px;
+  box-shadow: var(--bb-shadow-md);
+  transition: transform .4s cubic-bezier(.4,0,.2,1), box-shadow .4s;
+  animation: bb-rise .6s cubic-bezier(.4,0,.2,1) both;
+  animation-delay: var(--delay, 0ms);
+  overflow: hidden;
+  min-inline-size: 0;
+  margin: 0;
+  scroll-margin-top: 24px;
+}
+.bb-group::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 1px;
+  background: linear-gradient(135deg, rgba(255,255,255,.9), rgba(255,255,255,.2));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+          mask-composite: exclude;
+  pointer-events: none;
+}
+.bb-group:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--bb-shadow-lg);
+}
+@keyframes bb-rise {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.bb-group__head {
+  display: block;
+  padding: 0;
+  margin: 0 0 16px;
+  border: 0;
+  width: 100%;
+}
+.bb-group__meta {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.bb-group__num {
+  display: grid;
+  place-items: center;
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  background: var(--bb-text);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  transition: background .3s;
+}
+.bb-group__step {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--bb-muted);
+}
+.bb-group__status {
+  display: none;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  padding: 3px 10px;
+  border-radius: 999px;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  color: var(--bb-success);
+  font-size: 11px;
+  font-weight: 700;
+}
+.bb-group.is-complete .bb-group__status { display: inline-flex; }
+.bb-group.is-complete .bb-group__num { background: var(--bb-success); }
+
+.bb-group__title {
+  display: block;
+  font-size: 17px;
+  font-weight: 700;
+  margin: 0 0 4px;
+  letter-spacing: -.01em;
+}
+.bb-group__desc {
+  display: block;
+  margin: 0;
+  font-size: 13px;
+  color: var(--bb-muted);
+  line-height: 1.5;
+}
+.bb-group__empty { color: #9ca3af; font-size: 13px; }
+
+/* ---------- Product list ---------- */
+.bb-group__products {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: 420px;
+  overflow-y: auto;
+  padding: 4px;
+  margin: -4px;
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db transparent;
+}
+.bb-group__products::-webkit-scrollbar { width: 6px; }
+.bb-group__products::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 999px;
+}
+
+.bb-product { position: relative; }
+.bb-product input[type="radio"] {
+  position: absolute;
+  opacity: 0;
+  pointer-events: none;
+  width: 1px;
+  height: 1px;
+}
+
+/* ---------- Product label (visual card) ---------- */
+.bb-product__label {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: var(--bb-radius-sm);
+  background: #fff;
+  border: 1.5px solid #eef0f3;
+  cursor: pointer;
+  transition: all .25s cubic-bezier(.4,0,.2,1);
+  overflow: hidden;
+}
+.bb-product__label::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  background: linear-gradient(135deg, rgba(17,17,17,.04), rgba(17,17,17,0));
+  opacity: 0;
+  transition: opacity .25s;
+  pointer-events: none;
+}
+.bb-product__label:hover {
+  border-color: #d1d5db;
+  transform: translateX(2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,.05);
+}
+.bb-product__label:hover::after { opacity: 1; }
+
+.bb-product input[type="radio"]:checked ~ .bb-product__label {
+  border-color: var(--bb-text);
+  background: linear-gradient(135deg, #fafafa, #ffffff);
+  box-shadow: 0 0 0 3px rgba(17,17,17,.06), 0 6px 20px rgba(0,0,0,.06);
+}
+.bb-product input[type="radio"]:focus-visible ~ .bb-product__label {
+  outline: 2px solid var(--bb-text);
+  outline-offset: 2px;
+}
+
+.bb-product--soldout .bb-product__label {
+  opacity: .45;
+  cursor: not-allowed;
+  filter: grayscale(.4);
+}
+.bb-product--soldout .bb-product__label:hover {
+  transform: none;
+  box-shadow: none;
+  border-color: #eef0f3;
+}
+
+/* Media */
+.bb-product__media {
+  position: relative;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #f3f4f6;
+}
+.bb-product__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform .4s cubic-bezier(.4,0,.2,1);
+}
+.bb-product__label:hover .bb-product__image { transform: scale(1.08); }
+.bb-product__placeholder {
+  display: block;
+  width: 100%; height: 100%;
+  background: linear-gradient(135deg, #e5e7eb, #f3f4f6);
+}
+
+/* Custom check overlay */
+.bb-product__check {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(17,17,17,.55);
+  backdrop-filter: blur(2px);
+  color: #fff;
+  opacity: 0;
+  transform: scale(.7);
+  transition: all .3s cubic-bezier(.34,1.56,.64,1);
+}
+.bb-product__check svg { width: 22px; height: 22px; }
+.bb-product input[type="radio"]:checked ~ .bb-product__label .bb-product__check {
+  opacity: 1;
+  transform: scale(1);
+}
+
+/* Info */
+.bb-product__info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1;
+  min-width: 0;
+}
+.bb-product__title {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--bb-text);
+  line-height: 1.3;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.bb-product__price {
+  font-size: 13px;
+  color: var(--bb-muted);
+  font-weight: 500;
+}
+.bb-product input[type="radio"]:checked ~ .bb-product__label .bb-product__price {
+  color: var(--bb-text);
+  font-weight: 600;
+}
+
+.bb-product__soldout {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 3px 8px;
+  background: #111;
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 999px;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+/* ---------- Footer ---------- */
+.bb-footer {
+  position: sticky;
+  bottom: 16px;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: rgba(255,255,255,.85);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid rgba(255,255,255,.8);
+  border-radius: var(--bb-radius);
+  box-shadow: var(--bb-shadow-lg);
+  animation: bb-rise .8s cubic-bezier(.4,0,.2,1) both;
+  animation-delay: 240ms;
+}
+@media (max-width: 640px) {
+  .bb-footer {
+    grid-template-columns: 1fr;
+    padding: 16px;
+  }
+  .bb-add-btn { width: 100%; min-width: 0; }
+}
+
+.bb-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  min-width: 0;
+}
+.bb-summary__left {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.bb-summary__label {
+  font-size: 12px;
+  color: var(--bb-muted);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  font-weight: 600;
+}
+.bb-summary__count {
+  font-size: 13px;
+  color: var(--bb-text);
+  font-weight: 500;
+}
+.bb-summary__right {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.bb-summary__total {
+  font-size: 26px;
+  font-weight: 800;
+  letter-spacing: -.02em;
+  color: var(--bb-text);
+  transition: transform .25s cubic-bezier(.34,1.56,.64,1);
+}
+.bb-summary__total.is-bump { transform: scale(1.08); }
+
+/* ---------- Add Button ---------- */
+.bb-add-btn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 16px 32px;
+  min-width: 240px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #111 0%, #2b2b2f 100%);
+  color: #fff;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: .01em;
+  cursor: pointer;
+  overflow: hidden;
+  transition: transform .25s cubic-bezier(.4,0,.2,1), box-shadow .25s;
+  box-shadow: 0 8px 20px rgba(17,17,17,.2), 0 2px 4px rgba(17,17,17,.1);
+  isolation: isolate;
+  font-family: inherit;
+}
+.bb-add-btn:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 14px 32px rgba(17,17,17,.28), 0 4px 8px rgba(17,17,17,.15);
+}
+.bb-add-btn:active:not(:disabled) {
+  transform: translateY(0);
+  box-shadow: 0 6px 14px rgba(17,17,17,.22);
+}
+.bb-add-btn:focus-visible {
+  outline: 2px solid var(--bb-text);
+  outline-offset: 3px;
+}
+.bb-add-btn:disabled {
+  cursor: not-allowed;
+  background: linear-gradient(135deg, #d1d5db 0%, #e5e7eb 100%);
+  color: #9ca3af;
+  box-shadow: none;
+}
+
+.bb-add-btn__shine {
+  position: absolute;
+  top: 0; left: -100%;
+  width: 100%; height: 100%;
+  background: linear-gradient(120deg, transparent 30%, rgba(255,255,255,.35) 50%, transparent 70%);
+  transition: left .6s;
+  pointer-events: none;
+}
+.bb-add-btn:hover:not(:disabled) .bb-add-btn__shine { left: 100%; }
+
+.bb-add-btn__text,
+.bb-add-btn__loading {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.bb-add-btn__loading { display: none; }
+.bb-add-btn.loading .bb-add-btn__text { display: none; }
+.bb-add-btn.loading .bb-add-btn__loading { display: inline-flex; }
+
+.bb-add-btn__arrow {
+  display: inline-grid;
+  place-items: center;
+  transition: transform .3s;
+}
+.bb-add-btn:hover:not(:disabled) .bb-add-btn__arrow { transform: translateX(4px); }
+.bb-add-btn.loading .bb-add-btn__arrow { display: none; }
+
+.bb-spinner {
+  width: 16px; height: 16px;
+  border: 2px solid rgba(255,255,255,.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: bb-spin .7s linear infinite;
+}
+@keyframes bb-spin { to { transform: rotate(360deg); } }
+
+/* ---------- Message (errors only) ---------- */
+.bb-message {
+  grid-column: 1 / -1;
+  margin: 0;
+  font-size: 13.5px;
+  font-weight: 500;
+  text-align: center;
+  display: none;
+}
+.bb-message.error {
+  display: block;
+  padding: 10px 14px;
+  border-radius: 10px;
+  color: var(--bb-error);
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+}
+
+.bb-group.is-complete {
+  border-color: rgba(10,124,58,.35);
+  box-shadow: 0 0 0 3px rgba(10,124,58,.08), var(--bb-shadow-md);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bb-blob, .bb-group, .bb-footer, .bb-eyebrow__dot { animation: none !important; }
+  * { transition-duration: .01ms !important; }
+}
+</style>
+
+<script>
+/* Bundle Builder — front-end behaviour
+   - Tracks one selection per group
+   - Computes live total
+   - Adds all selections to cart in ONE request (cart/add.js)
+   - Re-renders cart drawer + cart bubble from that same response
+     (no second request => no race => drawer total always present)
+   - Handles out-of-stock, network errors, and aborts
+*/
+(function () {
+  'use strict';
+
+  var ROOT_URL = (window.Shopify && Shopify.routes && Shopify.routes.root) ? Shopify.routes.root : '/';
+  var CART_ADD_URL = ROOT_URL + 'cart/add.js';
+  var SECTION_IDS = ['cart-drawer', 'cart-icon-bubble'];
+
+  function formatMoneyFromCents(cents, format) {
+    var amount = (cents / 100).toFixed(2);
+    return String(format || '${{amount}}')
+      .replace(/\{\{\s*amount\s*\}\}/, amount)
+      .replace(/\{\{\s*amount_no_decimals\s*\}\}/, Math.round(cents / 100))
+      .replace(/\{\{\s*amount_with_comma_separator\s*\}\}/, amount.replace('.', ','))
+      .replace(/\{\{\s*amount_no_decimals_with_comma_separator\s*\}\}/, Math.round(cents / 100));
+  }
+
+  function createBundleId() {
+    if (window.crypto && typeof crypto.randomUUID === 'function') {
+      return 'BND-' + crypto.randomUUID();
+    }
+    return 'BND-' + Date.now() + '-' + Math.random().toString(36).slice(2, 10);
+  }
+
+  /* ---------- Cart drawer refresh ----------
+     Why the total was sometimes missing: when the cart was empty the drawer's
+     inner wrapper carried an `is-empty` class. Swapping only the children kept
+     that class, so the footer/total stayed hidden. We now copy the class list
+     from the fresh markup and clear `is-empty` on the drawer itself. */
+  function renderCartSections(sections) {
+    if (!sections) return false;
+    var parser = new DOMParser();
+    var rendered = false;
+
+    var drawer = document.querySelector('cart-drawer');
+    if (drawer && sections['cart-drawer']) {
+      var drawerDoc = parser.parseFromString(sections['cart-drawer'], 'text/html');
+      var newInner = drawerDoc.querySelector('.drawer__inner');
+      var curInner = drawer.querySelector('.drawer__inner');
+      if (newInner && curInner) {
+        curInner.className = newInner.className;
+        curInner.innerHTML = newInner.innerHTML;
+        rendered = true;
+      }
+      drawer.classList.remove('is-empty');
+    }
+
+    var bubble = document.querySelector('#cart-icon-bubble');
+    if (bubble && sections['cart-icon-bubble']) {
+      var bubbleDoc = parser.parseFromString(sections['cart-icon-bubble'], 'text/html');
+      var newBubble = bubbleDoc.querySelector('#cart-icon-bubble');
+      if (newBubble) bubble.innerHTML = newBubble.innerHTML;
+    }
+
+    return rendered;
+  }
+
+  function openCartDrawer() {
+    var drawer = document.querySelector('cart-drawer');
+    if (!drawer) return;
+    if (typeof drawer.open === 'function') {
+      drawer.open();
+    } else {
+      drawer.setAttribute('open', '');
+      drawer.classList.add('active');
+    }
+  }
+
+  /* Fallback: if the add response had no sections, fetch them separately. */
+  function fetchCartSections() {
+    var url = ROOT_URL + '?sections=' + SECTION_IDS.join(',') + '&_=' + Date.now();
+    return fetch(url, { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (res) { return res.ok ? res.json() : Promise.reject(new Error('Cart refresh failed')); });
+  }
+
+  /* Let other theme scripts (e.g. the upsell carousel) re-sync. */
+  function notifyTheme(bundleId, items) {
+    document.dispatchEvent(new CustomEvent('bundle:added', { detail: { bundleId: bundleId, items: items } }));
+    try {
+      if (typeof window.updateUpsell === 'function') {
+        window.setTimeout(function () {
+          if (typeof window.upsellIndex !== 'undefined') window.upsellIndex = 0;
+          window.updateUpsell();
+        }, 100);
+      }
+    } catch (e) { /* theme-specific, safe to ignore */ }
+  }
+
+  function initBundle(root) {
+    if (root.dataset.bbInitialized === 'true') return;
+    root.dataset.bbInitialized = 'true';
+
+    var totalEl     = root.querySelector('[data-bundle-total]');
+    var countEl     = root.querySelector('[data-bundle-count]');
+    var addBtn      = root.querySelector('[data-bundle-add]');
+    var messageEl   = root.querySelector('[data-bundle-message]');
+    var statusEl    = root.querySelector('[data-bundle-status]');
+    var groups      = Array.prototype.slice.call(root.querySelectorAll('[data-bundle-group]'));
+    var stepEls     = Array.prototype.slice.call(root.querySelectorAll('[data-bb-step]'));
+    var totalGroups = groups.length;
+    var moneyFormat = root.dataset.moneyFormat || '${{amount}}';
+
+    if (!totalEl || !countEl || !addBtn || !messageEl || !totalGroups) return;
+
+    var inFlight = null;
+
+    function readSelected() {
+      var out = [];
+      groups.forEach(function (group) {
+        var checked = group.querySelector('input[data-bundle-radio]:checked');
+        if (!checked || checked.disabled) return;
+        var card = checked.closest('[data-bundle-product]');
+        var price = parseInt(card && card.dataset.price, 10);
+        var variantId = parseInt(checked.value, 10);
+        if (!isFinite(price) || !isFinite(variantId)) return;
+        out.push({ variantId: variantId, price: price });
+      });
+      return out;
+    }
+
+    function paintSteps(selectedIndexes) {
+      var firstIncomplete = -1;
+      groups.forEach(function (g, i) {
+        var filled = selectedIndexes.indexOf(i) !== -1;
+        g.classList.toggle('is-complete', filled);
+        var step = stepEls[i];
+        if (!step) return;
+        step.classList.toggle('is-complete', filled);
+        step.classList.remove('is-active');
+        step.removeAttribute('aria-current');
+        var stateEl = step.querySelector('[data-bb-step-state]');
+        if (stateEl) stateEl.textContent = filled ? 'completed' : 'not started';
+        if (!filled && firstIncomplete === -1) firstIncomplete = i;
+      });
+      if (firstIncomplete !== -1 && stepEls[firstIncomplete]) {
+        var active = stepEls[firstIncomplete];
+        active.classList.add('is-active');
+        active.setAttribute('aria-current', 'step');
+        var activeState = active.querySelector('[data-bb-step-state]');
+        if (activeState) activeState.textContent = 'current step';
+      }
+    }
+
+    function updateSummary(bump) {
+      var selected = readSelected();
+      var cents = selected.reduce(function (sum, p) { return sum + p.price; }, 0);
+
+      totalEl.textContent = formatMoneyFromCents(cents, moneyFormat);
+      countEl.textContent = selected.length + ' / ' + totalGroups + ' selected';
+
+      if (bump) {
+        totalEl.classList.add('is-bump');
+        window.setTimeout(function () { totalEl.classList.remove('is-bump'); }, 250);
+      }
+
+      var ready = selected.length === totalGroups;
+      addBtn.disabled = !ready;
+      addBtn.setAttribute('aria-disabled', String(!ready));
+
+      var selectedIndexes = [];
+      groups.forEach(function (g, i) {
+        if (g.querySelector('input[data-bundle-radio]:checked')) selectedIndexes.push(i);
+      });
+      paintSteps(selectedIndexes);
+    }
+
+    function setError(text) {
+      messageEl.textContent = text || '';
+      messageEl.className = 'bb-message' + (text ? ' error' : '');
+    }
+
+    function announce(text) {
+      if (statusEl) statusEl.textContent = text || '';
+    }
+
+    function addBundle() {
+      var selected = readSelected();
+      if (selected.length !== totalGroups) {
+        setError('Please select one product from each group.');
+        return;
+      }
+
+      if (inFlight) inFlight.abort();
+      inFlight = new AbortController();
+
+      var bundleId = createBundleId();
+      var payload = {
+        items: selected.map(function (p) {
+          return {
+            id: p.variantId,
+            quantity: 1,
+            properties: {
+              _bundle_id: bundleId,
+              _bundle_source: 'Bundle Builder'
+            }
+          };
+        }),
+        /* Ask Shopify to render the sections in the same response */
+        sections: SECTION_IDS.join(',')
+      };
+
+      addBtn.classList.add('loading');
+      addBtn.disabled = true;
+      addBtn.setAttribute('aria-busy', 'true');
+      setError('');
+      announce('');
+
+      fetch(CART_ADD_URL, {
+        method: 'POST',
+        credentials: 'same-origin',
+        signal: inFlight.signal,
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'X-Requested-With': 'XMLHttpRequest'
+        },
+        body: JSON.stringify(payload)
+      })
+        .then(function (res) {
+          return res.json().then(function (body) {
+            if (!res.ok) {
+              throw new Error(body.description || body.message || 'Could not add the bundle. Please try again.');
+            }
+            return body;
+          });
+        })
+        .then(function (body) {
+          var ok = renderCartSections(body && body.sections);
+          if (ok) return;
+          /* sections missing from response -> fetch them */
+          return fetchCartSections().then(renderCartSections);
+        })
+        .then(function () {
+          openCartDrawer();
+          announce('Bundle added to cart.');
+          notifyTheme(bundleId, payload.items);
+          root.querySelectorAll('input[data-bundle-radio]:checked').forEach(function (input) {
+            input.checked = false;
+          });
+        })
+        .catch(function (err) {
+          if (err.name === 'AbortError') return;
+          console.error('[bundle-builder]', err);
+          var offline = !window.navigator.onLine;
+          setError(offline ? 'You appear to be offline. Check your connection and try again.' : err.message);
+        })
+        .finally(function () {
+          addBtn.classList.remove('loading');
+          addBtn.removeAttribute('aria-busy');
+          updateSummary(false);
+          inFlight = null;
+        });
+    }
+
+    /* Step links: smooth-scroll to the group and move focus to it */
+    root.addEventListener('click', function (e) {
+      var link = e.target.closest && e.target.closest('[data-bb-step-link]');
+      if (!link) return;
+      var target = document.getElementById(link.getAttribute('href').slice(1));
+      if (!target) return;
+      e.preventDefault();
+      target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      var firstInput = target.querySelector('input[data-bundle-radio]:not(:disabled)');
+      if (firstInput) firstInput.focus({ preventScroll: true });
+    });
+
+    root.addEventListener('change', function (e) {
+      var t = e.target;
+      if (t && t.matches && t.matches('input[data-bundle-radio]')) {
+        setError('');
+        updateSummary(true);
+      }
+    });
+
+    addBtn.addEventListener('click', addBundle);
+
+    updateSummary(false);
+  }
+
+  function boot() {
+    document.querySelectorAll('[data-bundle-builder]').forEach(initBundle);
+  }
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', boot, { once: true });
+  } else {
+    boot();
+  }
+
+  document.addEventListener('shopify:section:load', function (e) {
+    var root = e.target.querySelector('[data-bundle-builder]');
+    if (root) initBundle(root);
+  });
+})();
+</script>
+
+{% schema %}
+{
+  "name": "Bundle Builder",
+  "tag": "section",
+  "class": "section-bundle-builder",
+  "settings": [
+    {
+      "type": "text",
+      "id": "heading",
+      "label": "Heading",
+      "default": "Build Your Perfect Bundle"
+    },
+    {
+      "type": "text",
+      "id": "subheading",
+      "label": "Subheading",
+      "default": "Pick one from each group — curated to work beautifully together."
+    },
+    {
+      "type": "text",
+      "id": "button_text",
+      "label": "Button text",
+      "default": "Add Bundle to Cart"
+    }
+  ],
+  "blocks": [
+    {
+      "type": "product_group",
+      "name": "Product Group",
+      "settings": [
+        {
+          "type": "text",
+          "id": "group_title",
+          "label": "Group title",
+          "default": "Choose a product"
+        },
+        {
+          "type": "text",
+          "id": "group_description",
+          "label": "Group description"
+        },
+        {
+          "type": "product_list",
+          "id": "group_products",
+          "label": "Products in this group",
+          "limit": 12
+        }
+      ]
+    }
+  ],
+  "max_blocks": 3,
+  "presets": [
+    {
+      "name": "Bundle Builder",
+      "blocks": [
+        { "type": "product_group", "settings": { "group_title": "Choose your base" } },
+        { "type": "product_group", "settings": { "group_title": "Add a companion" } },
+        { "type": "product_group", "settings": { "group_title": "Finish with a treat" } }
+      ]
+    }
+  ]
+}
+{% endschema %}

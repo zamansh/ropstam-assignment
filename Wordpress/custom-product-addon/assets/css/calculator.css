@@ -1,0 +1,335 @@
+/**
+ * Custom Product Add-on Block: front-end styles.
+ * Mobile-first, themeable through CSS custom properties on .cpa-services.
+ */
+
+/* ---------- Tokens ---------- */
+.cpa-services,
+.cpa-single-details {
+	--cpa-accent: #4f46e5;
+	--cpa-accent-soft: #eef2ff;
+	--cpa-text: #111827;
+	--cpa-muted: #6b7280;
+	--cpa-border: #e5e7eb;
+	--cpa-surface: #ffffff;
+	--cpa-soft: #f9fafb;
+	--cpa-warn-bg: #fffbeb;
+	--cpa-warn-text: #92400e;
+	--cpa-radius: 16px;
+	--cpa-gap: clamp(1rem, 2.5vw, 1.75rem);
+
+	color: var(--cpa-text);
+	box-sizing: border-box;
+}
+
+.cpa-services *,
+.cpa-services *::before,
+.cpa-services *::after,
+.cpa-single-details *,
+.cpa-single-details *::before,
+.cpa-single-details *::after {
+	box-sizing: inherit;
+}
+
+.cpa-services {
+	margin: clamp(1.5rem, 4vw, 3rem) 0;
+}
+
+.cpa-services__title {
+	margin: 0 0 var(--cpa-gap);
+	font-size: clamp(1.5rem, 1.2rem + 1.5vw, 2.25rem);
+	line-height: 1.2;
+}
+
+.cpa-services__empty {
+	padding: 1rem 1.25rem;
+	border-radius: 12px;
+	background: #f3f4f6;
+	color: #4b5563;
+}
+
+/* ---------- Grid: 1 column on phones, auto-fits up to 3 ---------- */
+.cpa-services__grid {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( min( 100%, 17.5rem ), 1fr ) );
+	gap: var(--cpa-gap);
+}
+
+/* ---------- Card ---------- */
+.cpa-card {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+	background: var(--cpa-surface);
+	border: 1px solid var(--cpa-border);
+	border-radius: var(--cpa-radius);
+	box-shadow: 0 1px 2px rgba( 17, 24, 39, 0.05 );
+	transition: box-shadow 0.2s ease, transform 0.2s ease, border-color 0.2s ease;
+}
+
+.cpa-card:hover {
+	border-color: #c7d2fe;
+	box-shadow: 0 12px 28px -12px rgba( 79, 70, 229, 0.35 );
+	transform: translateY( -3px );
+}
+
+.cpa-card:focus-within {
+	border-color: var(--cpa-accent);
+}
+
+.cpa-card__media {
+	aspect-ratio: 16 / 10;
+	background: var(--cpa-soft);
+}
+
+.cpa-card__img {
+	display: block;
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+}
+
+.cpa-card__body {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	gap: 0.9rem;
+	padding: clamp(1rem, 3vw, 1.4rem);
+}
+
+.cpa-card__title {
+	margin: 0;
+	font-size: 1.2rem;
+	line-height: 1.3;
+}
+
+.cpa-card__title a {
+	color: inherit;
+	text-decoration: none;
+}
+
+.cpa-card__title a:hover {
+	color: var(--cpa-accent);
+}
+
+.cpa-card__excerpt {
+	display: -webkit-box;
+	margin: 0;
+	overflow: hidden;
+	color: var(--cpa-muted);
+	font-size: 0.95rem;
+	line-height: 1.55;
+	-webkit-line-clamp: 3;
+	-webkit-box-orient: vertical;
+}
+
+/* ---------- Facts (price + delivery) ---------- */
+.cpa-facts {
+	display: grid;
+	grid-template-columns: repeat( auto-fit, minmax( 7rem, 1fr ) );
+	gap: 0.75rem;
+	margin: 0;
+	padding: 0.85rem 1rem;
+	background: var(--cpa-soft);
+	border-radius: 12px;
+}
+
+.cpa-facts__item {
+	min-width: 0;
+}
+
+.cpa-facts dt {
+	margin: 0 0 0.15rem;
+	color: var(--cpa-muted);
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.cpa-facts dd {
+	margin: 0;
+	font-size: 1.05rem;
+	font-weight: 700;
+}
+
+/* ---------- Add-ons ---------- */
+.cpa-addons {
+	display: grid;
+	gap: 0.6rem;
+	min-width: 0;
+	margin: 0;
+	padding: 0;
+	border: 0;
+}
+
+.cpa-addons__legend {
+	padding: 0;
+	margin-bottom: 0.4rem;
+	color: var(--cpa-muted);
+	font-size: 0.72rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.cpa-switch {
+	position: relative;
+	display: flex;
+	align-items: center;
+	gap: 0.8rem;
+	padding: 0.75rem 0.9rem;
+	border: 1px solid var(--cpa-border);
+	border-radius: 12px;
+	cursor: pointer;
+	transition: border-color 0.15s ease, background-color 0.15s ease;
+}
+
+.cpa-switch:hover {
+	border-color: #c7d2fe;
+}
+
+/* Real checkbox stays in the DOM (keyboard + screen reader), just visually hidden. */
+.cpa-switch__input {
+	position: absolute;
+	width: 1px;
+	height: 1px;
+	margin: 0;
+	opacity: 0;
+}
+
+.cpa-switch__track {
+	position: relative;
+	flex: 0 0 2.6rem;
+	height: 1.5rem;
+	background: #d1d5db;
+	border-radius: 999px;
+	transition: background-color 0.2s ease;
+}
+
+.cpa-switch__track::after {
+	content: '';
+	position: absolute;
+	top: 0.2rem;
+	left: 0.2rem;
+	width: 1.1rem;
+	height: 1.1rem;
+	background: #fff;
+	border-radius: 50%;
+	box-shadow: 0 1px 2px rgba( 0, 0, 0, 0.3 );
+	transition: transform 0.2s ease;
+}
+
+.cpa-switch__input:checked + .cpa-switch__track {
+	background: var(--cpa-accent);
+}
+
+.cpa-switch__input:checked + .cpa-switch__track::after {
+	transform: translateX( 1.1rem );
+}
+
+.cpa-switch__input:focus-visible + .cpa-switch__track {
+	outline: 3px solid var(--cpa-accent);
+	outline-offset: 3px;
+}
+
+.cpa-switch__text {
+	display: flex;
+	flex: 1;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 0.15rem 0.75rem;
+	min-width: 0;
+}
+
+.cpa-switch__label {
+	font-weight: 600;
+}
+
+.cpa-switch__price {
+	color: var(--cpa-accent);
+	font-weight: 700;
+}
+
+/* ---------- Unavailable state ---------- */
+.cpa-card--unavailable .cpa-card__media {
+	filter: grayscale( 1 );
+	opacity: 0.7;
+}
+
+.cpa-card__notice {
+	margin: 0;
+	padding: 0.75rem 0.9rem;
+	background: var(--cpa-warn-bg);
+	border-radius: 12px;
+	color: var(--cpa-warn-text);
+	font-size: 0.9rem;
+}
+
+/* ---------- Footer / total ---------- */
+.cpa-card__footer {
+	display: flex;
+	flex-wrap: wrap;
+	align-items: baseline;
+	justify-content: space-between;
+	gap: 0.25rem 1rem;
+	margin-top: auto;
+	padding: 1rem clamp(1rem, 3vw, 1.4rem);
+	background: var(--cpa-accent-soft);
+	border-top: 1px solid var(--cpa-border);
+}
+
+.cpa-total__label {
+	font-size: 0.8rem;
+	font-weight: 600;
+	letter-spacing: 0.06em;
+	text-transform: uppercase;
+}
+
+.cpa-total__value {
+	color: var(--cpa-accent);
+	font-size: 1.6rem;
+	font-weight: 800;
+	font-variant-numeric: tabular-nums;
+	line-height: 1.1;
+}
+
+/* ---------- Single service page ---------- */
+.cpa-single-details {
+	margin: 2rem 0;
+}
+
+.cpa-single-details .cpa-facts {
+	max-width: 28rem;
+}
+
+.cpa-facts dd,
+.cpa-facts dt {
+	/* Themes sometimes indent dd; keep it flush. */
+	margin-left: 0;
+}
+
+/* ---------- Preferences ---------- */
+@media ( prefers-reduced-motion: reduce ) {
+	.cpa-card,
+	.cpa-switch,
+	.cpa-switch__track,
+	.cpa-switch__track::after {
+		transition: none;
+	}
+
+	.cpa-card:hover {
+		transform: none;
+	}
+}
+
+@media ( forced-colors: active ) {
+	.cpa-switch__track {
+		border: 2px solid ButtonText;
+	}
+
+	.cpa-switch__input:checked + .cpa-switch__track {
+		background: Highlight;
+	}
+}

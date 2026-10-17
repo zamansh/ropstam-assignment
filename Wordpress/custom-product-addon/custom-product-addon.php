@@ -6,12 +6,10 @@
  * Requires at least: 6.3
  * Requires PHP:      7.4
  * Author:            Sher Zaman
- * License:           GPL-2.0-or-later
- * Text Domain:       cpa-block
- */
+*/
 
 if ( ! defined( 'ABSPATH' ) ) {
-	exit; // No direct access.
+	exit; 
 }
 
 define( 'CPA_VERSION', '1.1.0' );
@@ -27,9 +25,7 @@ require_once CPA_PLUGIN_DIR . 'includes/class-cpa-admin-columns.php';
 require_once CPA_PLUGIN_DIR . 'includes/class-cpa-single-view.php';
 require_once CPA_PLUGIN_DIR . 'includes/class-cpa-shortcode.php';
 
-/**
- * Boot every component once all plugins are loaded.
- */
+
 function cpa_init_plugin() {
 	new CPA_Post_Type();
 	new CPA_Meta_Boxes();
@@ -40,18 +36,13 @@ function cpa_init_plugin() {
 }
 add_action( 'plugins_loaded', 'cpa_init_plugin' );
 
-/**
- * Register the CPT first, then flush rewrite rules so /services/ works immediately.
- */
+
 function cpa_activate_plugin() {
 	( new CPA_Post_Type() )->register_post_type();
 	flush_rewrite_rules();
 }
 register_activation_hook( __FILE__, 'cpa_activate_plugin' );
 
-/**
- * Remove our rewrite rules on deactivation.
- */
 function cpa_deactivate_plugin() {
 	flush_rewrite_rules();
 }

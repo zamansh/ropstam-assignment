@@ -1,12 +1,6 @@
 <?php
 /**
  * [cpa_recent_services] shortcode.
- *
- * - Fetches the 3 most recently UPDATED services with WP_Query (no raw SQL).
- * - Renders each card from templates/service-card.php (everything escaped).
- * - Enqueues the calculator assets through wp_enqueue_* only.
- *
- * @package CustomProductAddon
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -21,11 +15,6 @@ class CPA_Shortcode {
 		add_shortcode( self::TAG, array( $this, 'render' ) );
 	}
 
-	/**
-	 * The 3 most recently updated, published services.
-	 *
-	 * @return WP_Query
-	 */
 	private function get_recent_services() {
 		return new WP_Query(
 			array(
@@ -35,18 +24,12 @@ class CPA_Shortcode {
 				'orderby'                => 'modified',
 				'order'                  => 'DESC',
 				'ignore_sticky_posts'    => true,
-				'no_found_rows'          => true,  // Skip the pagination count query.
-				'update_post_term_cache' => false, // We do not use terms here.
+				'no_found_rows'          => true,  
+				'update_post_term_cache' => false, 
 			)
 		);
 	}
 
-	/**
-	 * Optional add-ons. Only "Priority Turnaround" ships by default; other
-	 * plugins or themes can extend the list with the `cpa_addons` filter.
-	 *
-	 * @return array[] Each item: id (string), label (string), price (float).
-	 */
 	private function get_addons() {
 		$addons = apply_filters(
 			'cpa_addons',
@@ -75,12 +58,6 @@ class CPA_Shortcode {
 		return $clean;
 	}
 
-	/**
-	 * Shortcode callback.
-	 *
-	 * @param array|string $atts Shortcode attributes.
-	 * @return string
-	 */
 	public function render( $atts ) {
 		$atts = shortcode_atts(
 			array( 'title' => __( 'Latest Services', 'cpa-block' ) ),
@@ -90,12 +67,12 @@ class CPA_Shortcode {
 
 		$query = $this->get_recent_services();
 
-		// Empty state: nothing published yet.
+		
 		if ( ! $query->have_posts() ) {
 			return '<p class="cpa-services__empty" role="status">' . esc_html__( 'No services are available right now.', 'cpa-block' ) . '</p>';
 		}
 
-		// Fallback enqueue (page builders do not put the shortcode in post_content).
+		
 		wp_enqueue_style( CPA_Assets::STYLE_HANDLE );
 		wp_enqueue_script( CPA_Assets::SCRIPT_HANDLE );
 
@@ -114,7 +91,7 @@ class CPA_Shortcode {
 					'title'     => get_the_title(),
 					'url'       => get_permalink(),
 					'excerpt'   => wp_trim_words( wp_strip_all_tags( get_the_excerpt() ), 24 ),
-					// Decorative image (the title sits right next to it), so empty alt.
+					
 					'thumbnail' => get_the_post_thumbnail(
 						$id,
 						'medium_large',
@@ -147,12 +124,7 @@ class CPA_Shortcode {
 		return ob_get_clean();
 	}
 
-	/**
-	 * Render one card. Kept in its own method so template variables stay scoped.
-	 *
-	 * @param array   $service Service data.
-	 * @param array[] $addons  Add-ons.
-	 */
+	
 	private function render_card( $service, $addons ) {
 		include CPA_PLUGIN_DIR . 'templates/service-card.php';
 	}

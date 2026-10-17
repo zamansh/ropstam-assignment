@@ -1,9 +1,7 @@
 <?php
 /**
  * Registers the "Services" custom post type.
- *
- * @package CustomProductAddon
- */
+*/
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit;
@@ -17,9 +15,6 @@ class CPA_Post_Type {
 		add_action( 'init', array( $this, 'register_post_type' ) );
 	}
 
-	/**
-	 * Register the "service" post type.
-	 */
 	public function register_post_type() {
 
 		$labels = array(
@@ -41,7 +36,7 @@ class CPA_Post_Type {
 			array(
 				'labels'       => $labels,
 				'public'       => true,
-				'show_in_rest' => true, // Block editor + REST API support.
+				'show_in_rest' => true, 
 				'menu_icon'    => 'dashicons-admin-tools',
 				'supports'     => array( 'title', 'editor', 'thumbnail', 'excerpt' ),
 				'has_archive'  => true,

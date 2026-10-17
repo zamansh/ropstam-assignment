@@ -16,12 +16,7 @@ class CPA_Admin_Columns {
 		add_action( 'manage_service_posts_custom_column', array( $this, 'render_column' ), 10, 2 );
 	}
 
-	/**
-	 * Insert the new columns right after the title.
-	 *
-	 * @param array $columns Existing columns.
-	 * @return array
-	 */
+	
 	public function add_columns( $columns ) {
 		$updated = array();
 
@@ -37,12 +32,6 @@ class CPA_Admin_Columns {
 		return $updated;
 	}
 
-	/**
-	 * Print a column cell.
-	 *
-	 * @param string $column  Column key.
-	 * @param int    $post_id Post ID.
-	 */
 	public function render_column( $column, $post_id ) {
 		if ( 'cpa_base_price' !== $column && 'cpa_delivery_days' !== $column ) {
 			return;

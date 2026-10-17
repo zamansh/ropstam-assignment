@@ -1,9 +1,3 @@
-/**
- * Custom Product Add-on Block: front-end styles.
- * Mobile-first, themeable through CSS custom properties on .cpa-services.
- */
-
-/* ---------- Tokens ---------- */
 .cpa-services,
 .cpa-single-details {
 	--cpa-accent: #4f46e5;
@@ -48,14 +42,12 @@
 	color: #4b5563;
 }
 
-/* ---------- Grid: 1 column on phones, auto-fits up to 3 ---------- */
 .cpa-services__grid {
 	display: grid;
 	grid-template-columns: repeat( auto-fit, minmax( min( 100%, 17.5rem ), 1fr ) );
 	gap: var(--cpa-gap);
 }
 
-/* ---------- Card ---------- */
 .cpa-card {
 	display: flex;
 	flex-direction: column;
@@ -123,7 +115,6 @@
 	-webkit-box-orient: vertical;
 }
 
-/* ---------- Facts (price + delivery) ---------- */
 .cpa-facts {
 	display: grid;
 	grid-template-columns: repeat( auto-fit, minmax( 7rem, 1fr ) );
@@ -153,7 +144,6 @@
 	font-weight: 700;
 }
 
-/* ---------- Add-ons ---------- */
 .cpa-addons {
 	display: grid;
 	gap: 0.6rem;
@@ -189,7 +179,6 @@
 	border-color: #c7d2fe;
 }
 
-/* Real checkbox stays in the DOM (keyboard + screen reader), just visually hidden. */
 .cpa-switch__input {
 	position: absolute;
 	width: 1px;
@@ -252,7 +241,6 @@
 	font-weight: 700;
 }
 
-/* ---------- Unavailable state ---------- */
 .cpa-card--unavailable .cpa-card__media {
 	filter: grayscale( 1 );
 	opacity: 0.7;
@@ -267,7 +255,6 @@
 	font-size: 0.9rem;
 }
 
-/* ---------- Footer / total ---------- */
 .cpa-card__footer {
 	display: flex;
 	flex-wrap: wrap;
@@ -295,7 +282,6 @@
 	line-height: 1.1;
 }
 
-/* ---------- Single service page ---------- */
 .cpa-single-details {
 	margin: 2rem 0;
 }
@@ -306,11 +292,9 @@
 
 .cpa-facts dd,
 .cpa-facts dt {
-	/* Themes sometimes indent dd; keep it flush. */
 	margin-left: 0;
 }
 
-/* ---------- Preferences ---------- */
 @media ( prefers-reduced-motion: reduce ) {
 	.cpa-card,
 	.cpa-switch,

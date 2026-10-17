@@ -1,11 +1,7 @@
 <?php
 /**
- * Registers (and conditionally enqueues) the front-end CSS and JS.
+ * Registers and enqueee the front-end CSS and JS.
  *
- * Everything goes through wp_register_* / wp_enqueue_* only. Assets are
- * loaded on pages that actually need them, never site-wide.
- *
- * @package CustomProductAddon
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -22,34 +18,26 @@ class CPA_Assets {
 		add_action( 'wp_enqueue_scripts', array( $this, 'maybe_enqueue_early' ), 20 );
 	}
 
-	/**
-	 * Register only; nothing is printed until something enqueues it.
-	 */
 	public function register_assets() {
 		wp_register_style(
 			self::STYLE_HANDLE,
 			CPA_PLUGIN_URL . 'assets/css/calculator.css',
-			array(), // Dependencies: none, the stylesheet is self-contained.
+			array(), 
 			CPA_VERSION
 		);
 
 		wp_register_script(
 			self::SCRIPT_HANDLE,
 			CPA_PLUGIN_URL . 'assets/js/calculator.js',
-			array(), // Dependencies: none on purpose. Vanilla JS, no jQuery.
+			array(), 
 			CPA_VERSION,
 			array(
 				'in_footer' => true,
-				'strategy'  => 'defer', // Never blocks rendering (WP 6.3+).
+				'strategy'  => 'defer', 
 			)
 		);
 	}
 
-	/**
-	 * Enqueue in <head> when we can detect usage ahead of time, which avoids a
-	 * flash of unstyled content. The shortcode also enqueues as a fallback for
-	 * page builders (e.g. Elementor) where the shortcode is not in post_content.
-	 */
 	public function maybe_enqueue_early() {
 		if ( is_singular( 'service' ) ) {
 			wp_enqueue_style( self::STYLE_HANDLE );

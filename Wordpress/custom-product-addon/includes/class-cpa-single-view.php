@@ -1,8 +1,6 @@
 <?php
 /**
  * Shows Base Price and Delivery Time on a single Service page.
- *
- * @package CustomProductAddon
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -15,12 +13,7 @@ class CPA_Single_View {
 		add_filter( 'the_content', array( $this, 'append_details' ) );
 	}
 
-	/**
-	 * Append the details block after the main content of a single service.
-	 *
-	 * @param string $content Post content.
-	 * @return string
-	 */
+	
 	public function append_details( $content ) {
 		if ( ! is_singular( 'service' ) || ! in_the_loop() || ! is_main_query() ) {
 			return $content;

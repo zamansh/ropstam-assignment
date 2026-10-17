@@ -1,11 +1,7 @@
 <?php
 /**
  * Custom meta fields for Services: base_price and delivery_time_days.
- *
  * Registered with register_post_meta() (REST-exposed + sanitized) and edited
- * through a classic meta box with nonce + capability checks.
- *
- * @package CustomProductAddon
  */
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -20,9 +16,6 @@ class CPA_Meta_Boxes {
 		add_action( 'save_post_service', array( $this, 'save_meta' ) );
 	}
 
-	/**
-	 * Register both fields so they are sanitized everywhere (admin, REST, code).
-	 */
 	public function register_meta_fields() {
 		$auth = function () {
 			return current_user_can( 'edit_posts' );
@@ -53,20 +46,13 @@ class CPA_Meta_Boxes {
 		);
 	}
 
-	/**
-	 * Price must be a non-negative number with 2 decimals.
-	 *
-	 * @param mixed $value Raw value.
-	 * @return float
-	 */
+
 	public function sanitize_price( $value ) {
 		$value = is_numeric( $value ) ? (float) $value : 0.0;
 		return $value < 0 ? 0.0 : round( $value, 2 );
 	}
 
-	/**
-	 * Add the "Service Details" meta box.
-	 */
+	
 	public function add_meta_box() {
 		add_meta_box(
 			'cpa_service_details',
@@ -78,11 +64,6 @@ class CPA_Meta_Boxes {
 		);
 	}
 
-	/**
-	 * Render the meta box.
-	 *
-	 * @param WP_Post $post Current post.
-	 */
 	public function render_meta_box( $post ) {
 		wp_nonce_field( 'cpa_save_service_meta', 'cpa_service_meta_nonce' );
 
@@ -102,11 +83,7 @@ class CPA_Meta_Boxes {
 		<?php
 	}
 
-	/**
-	 * Save the fields (nonce, autosave and capability checks, then sanitize).
-	 *
-	 * @param int $post_id Post ID.
-	 */
+	
 	public function save_meta( $post_id ) {
 		if ( ! isset( $_POST['cpa_service_meta_nonce'] ) ||
 			! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['cpa_service_meta_nonce'] ) ), 'cpa_save_service_meta' ) ) {

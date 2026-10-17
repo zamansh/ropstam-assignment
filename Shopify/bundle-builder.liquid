@@ -1,13 +1,12 @@
 {%- comment -%}
-  Bundle Builder Section — Premium UI
+  Bundle Builder Section
   Renders product groups; customer selects one variant per group.
   Adds all selections to cart in a single request with a shared bundle ID,
-  then re-renders the cart drawer + cart bubble from the same response.
 
-  Structure:
+  Section Structure:
     1. Liquid markup
     2. Scoped CSS
-    3. Vanilla JS (no dependencies)
+    3. Vanilla JS
 {%- endcomment -%}
 
 {%- liquid
@@ -189,7 +188,7 @@
         </span>
       </button>
 
-      {%- comment -%} Visible only for errors. Success is announced to screen readers only. {%- endcomment -%}
+    
       <p class="bb-message" data-bundle-message role="alert"></p>
       <p class="bb-sr-only" data-bundle-status role="status" aria-live="polite"></p>
     </div>
@@ -197,9 +196,6 @@
 </div>
 
 <style>
-/* ============================================================
-   Bundle Builder — Premium UI
-   ============================================================ */
 .bundle-builder {
   --bb-bg: #ffffff;
   --bb-surface: #ffffff;
@@ -241,7 +237,6 @@
   border: 0;
 }
 
-/* Decorative blobs */
 .bb-blob {
   position: absolute;
   border-radius: 50%;
@@ -273,8 +268,6 @@
   max-width: 1180px;
   margin: 0 auto;
 }
-
-/* ---------- Header ---------- */
 .bb-header { text-align: center; margin-bottom: 40px; }
 
 .bb-eyebrow {
@@ -323,7 +316,6 @@
   line-height: 1.55;
 }
 
-/* ---------- Stepper (connected steps) ---------- */
 .bb-progress {
   list-style: none;
   padding: 0;
@@ -337,7 +329,7 @@
   flex: 1 1 0;
   min-width: 0;
 }
-/* connector track + animated fill, drawn between this step and the next */
+
 .bb-progress__step:not(:last-child)::before,
 .bb-progress__step:not(:last-child)::after {
   content: '';
@@ -428,7 +420,7 @@
   .bb-progress__step:not(:last-child)::after { top: 15px; left: calc(50% + 22px); right: calc(-50% + 22px); }
 }
 
-/* ---------- Grid ---------- */
+
 .bb-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -439,7 +431,7 @@
   .bb-grid { grid-template-columns: 1fr; }
 }
 
-/* ---------- Group Card ---------- */
+
 .bb-group {
   position: relative;
   background: rgba(255,255,255,.75);
@@ -541,7 +533,7 @@
 }
 .bb-group__empty { color: #9ca3af; font-size: 13px; }
 
-/* ---------- Product list ---------- */
+
 .bb-group__products {
   display: flex;
   flex-direction: column;
@@ -568,7 +560,6 @@
   height: 1px;
 }
 
-/* ---------- Product label (visual card) ---------- */
 .bb-product__label {
   position: relative;
   display: flex;
@@ -644,7 +635,7 @@
   background: linear-gradient(135deg, #e5e7eb, #f3f4f6);
 }
 
-/* Custom check overlay */
+
 .bb-product__check {
   position: absolute;
   inset: 0;
@@ -706,7 +697,6 @@
   z-index: 2;
 }
 
-/* ---------- Footer ---------- */
 .bb-footer {
   position: sticky;
   bottom: 16px;
@@ -771,7 +761,7 @@
 }
 .bb-summary__total.is-bump { transform: scale(1.08); }
 
-/* ---------- Add Button ---------- */
+
 .bb-add-btn {
   position: relative;
   display: inline-flex;
@@ -850,7 +840,6 @@
 }
 @keyframes bb-spin { to { transform: rotate(360deg); } }
 
-/* ---------- Message (errors only) ---------- */
 .bb-message {
   grid-column: 1 / -1;
   margin: 0;
@@ -880,14 +869,7 @@
 </style>
 
 <script>
-/* Bundle Builder — front-end behaviour
-   - Tracks one selection per group
-   - Computes live total
-   - Adds all selections to cart in ONE request (cart/add.js)
-   - Re-renders cart drawer + cart bubble from that same response
-     (no second request => no race => drawer total always present)
-   - Handles out-of-stock, network errors, and aborts
-*/
+
 (function () {
   'use strict';
 
@@ -1141,7 +1123,7 @@
         });
     }
 
-    /* Step links: smooth-scroll to the group and move focus to it */
+    
     root.addEventListener('click', function (e) {
       var link = e.target.closest && e.target.closest('[data-bb-step-link]');
       if (!link) return;

@@ -880,14 +880,6 @@
 </style>
 
 <script>
-/* Bundle Builder — front-end behaviour
-   - Tracks one selection per group
-   - Computes live total
-   - Adds all selections to cart in ONE request (cart/add.js)
-   - Re-renders cart drawer + cart bubble from that same response
-     (no second request => no race => drawer total always present)
-   - Handles out-of-stock, network errors, and aborts
-*/
 (function () {
   'use strict';
 
